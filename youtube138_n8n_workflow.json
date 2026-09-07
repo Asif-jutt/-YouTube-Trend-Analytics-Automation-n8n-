@@ -1,0 +1,667 @@
+{
+  "name": "YouTube138 Trend Report (RapidAPI + Gmail)",
+  "nodes": [
+    {
+      "id": "schedule_trigger",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        400
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set_config",
+      "name": "Set: Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "searchQuery",
+              "value": "ai automation tools",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "minViewsPerDay",
+              "value": 1000,
+              "type": "number"
+            },
+            {
+              "id": "a3",
+              "name": "reportEmail",
+              "value": "you@example.com",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "rapidApiHost",
+              "value": "youtube138.p.rapidapi.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "http_search",
+      "name": "HTTP Request: Search Videos",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        620,
+        400
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://youtube138.p.rapidapi.com/search/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.searchQuery }}"
+            },
+            {
+              "name": "hl",
+              "value": "en"
+            },
+            {
+              "name": "gl",
+              "value": "US"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-rapidapi-key",
+              "value": "YOUR_RAPIDAPI_KEY_HERE"
+            },
+            {
+              "name": "x-rapidapi-host",
+              "value": "={{ $json.rapidApiHost }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000,
+          "retry": {
+            "retry": {
+              "maxTries": 3,
+              "waitBetweenTries": 2000
+            }
+          }
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "if_has_results",
+      "name": "IF: Has Results?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        840,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.contents ? $json.contents.length : 0 }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "split_items",
+      "name": "Split Out: Contents",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        300
+      ],
+      "parameters": {
+        "fieldToSplitOut": "contents",
+        "options": {}
+      }
+    },
+    {
+      "id": "if_video_only",
+      "name": "IF: Is Video?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "v1",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "video",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "set_basic",
+      "name": "Set: Extract Basic Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1500,
+        220
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "videoId",
+              "value": "={{ $json.video.videoId }}",
+              "type": "string"
+            },
+            {
+              "id": "b2",
+              "name": "title",
+              "value": "={{ $json.video.title }}",
+              "type": "string"
+            },
+            {
+              "id": "b3",
+              "name": "channelTitle",
+              "value": "={{ $json.video.author.title }}",
+              "type": "string"
+            },
+            {
+              "id": "b4",
+              "name": "channelId",
+              "value": "={{ $json.video.author.channelId }}",
+              "type": "string"
+            },
+            {
+              "id": "b5",
+              "name": "viewCount",
+              "value": "={{ $json.video.stats.views }}",
+              "type": "number"
+            },
+            {
+              "id": "b6",
+              "name": "publishedTimeText",
+              "value": "={{ $json.video.publishedTimeText }}",
+              "type": "string"
+            },
+            {
+              "id": "b7",
+              "name": "lengthSeconds",
+              "value": "={{ $json.video.lengthSeconds }}",
+              "type": "number"
+            },
+            {
+              "id": "b8",
+              "name": "thumbnailUrl",
+              "value": "={{ $json.video.thumbnails ? $json.video.thumbnails[0].url : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "b9",
+              "name": "url",
+              "value": "={{ 'https://www.youtube.com/watch?v=' + $json.video.videoId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "code_clean",
+      "name": "Code: Clean & Calculate Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const results = [];\nfor (const item of items) {\n  const d = item.json;\n  const text = (d.publishedTimeText || '').toLowerCase();\n  let days = 30;\n  const match = text.match(/(\\d+)\\s+(day|week|month|year)/);\n  if (match) {\n    const num = parseInt(match[1]);\n    const unit = match[2];\n    if (unit === 'day') days = num;\n    else if (unit === 'week') days = num * 7;\n    else if (unit === 'month') days = num * 30;\n    else if (unit === 'year') days = num * 365;\n  }\n  days = Math.max(days, 1);\n  const viewCount = parseInt(d.viewCount || 0);\n  const viewsPerDay = Math.round(viewCount / days);\n\n  results.push({\n    json: {\n      title: d.title,\n      channelTitle: d.channelTitle,\n      videoId: d.videoId,\n      url: d.url,\n      thumbnailUrl: d.thumbnailUrl,\n      viewCount,\n      approxDaysSincePublish: days,\n      viewsPerDay,\n      publishedTimeText: d.publishedTimeText,\n      lengthSeconds: d.lengthSeconds\n    }\n  });\n}\nreturn results;"
+      }
+    },
+    {
+      "id": "sheets_log",
+      "name": "Google Sheets: Log All Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1940,
+        60
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {}
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "if_filter",
+      "name": "IF: Top Performer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1940,
+        220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "f1",
+              "leftValue": "={{ $json.viewsPerDay }}",
+              "rightValue": "={{ $('Set: Config').item.json.minViewsPerDay }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "sort_views",
+      "name": "Sort: By Views/Day",
+      "type": "n8n-nodes-base.sort",
+      "typeVersion": 1,
+      "position": [
+        2160,
+        220
+      ],
+      "parameters": {
+        "sortFieldsUi": {
+          "sortField": [
+            {
+              "fieldName": "viewsPerDay",
+              "order": "descending"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "agg_report",
+      "name": "Aggregate: Build Report Array",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2380,
+        220
+      ],
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "data",
+        "options": {}
+      }
+    },
+    {
+      "id": "code_html",
+      "name": "Code: Build HTML Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        220
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const videos = items[0].json.data || [];\n\nlet rows = videos.map(v => `\n  <tr>\n    <td><a href=\"${v.url}\">${v.title}</a></td>\n    <td>${v.channelTitle}</td>\n    <td>${v.viewCount.toLocaleString()}</td>\n    <td>${v.viewsPerDay.toLocaleString()}</td>\n    <td>${v.publishedTimeText}</td>\n  </tr>\n`).join('');\n\nconst html = `\n  <h2>YouTube Trend Report - ${new Date().toDateString()}</h2>\n  <p>${videos.length} trending video(s) found above threshold.</p>\n  <table border=\"1\" cellpadding=\"8\" cellspacing=\"0\" style=\"border-collapse:collapse; font-family:Arial; font-size:14px;\">\n    <tr style=\"background:#f2f2f2;\">\n      <th>Title</th><th>Channel</th><th>Views</th><th>Views/Day</th><th>Published</th>\n    </tr>\n    ${rows}\n  </table>\n`;\n\nreturn [{ json: { htmlReport: html, videoCount: videos.length } }];"
+      }
+    },
+    {
+      "id": "gmail_send",
+      "name": "Send a message",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2820,
+        220
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Set: Config').item.json.reportEmail }}",
+        "subject": "=YouTube Trend Report - {{ $now.format('yyyy-MM-dd') }} ({{ $json.videoCount }} videos)",
+        "message": "={{ $json.htmlReport }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "set_search_error",
+      "name": "Set: Format Search Error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        840,
+        620
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "errorSubject",
+              "value": "YouTube Scraper Alert: Search API Failed",
+              "type": "string"
+            },
+            {
+              "id": "e2",
+              "name": "errorBody",
+              "value": "=The YouTube search request failed.\\n\\nError: {{ $json.error?.message || JSON.stringify($json) }}\\n\\nCheck your RapidAPI key, quota, or endpoint URL.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "set_no_results",
+      "name": "Set: Format No Results",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1060,
+        620
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n1",
+              "name": "errorSubject",
+              "value": "YouTube Scraper Alert: No Results Returned",
+              "type": "string"
+            },
+            {
+              "id": "n2",
+              "name": "errorBody",
+              "value": "=The search for \\\"{{ $('Set: Config').item.json.searchQuery }}\\\" returned zero videos.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gmail_error",
+      "name": "Send a message (Error Alert)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1280,
+        700
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Set: Config').item.json.reportEmail }}",
+        "subject": "={{ $json.errorSubject }}",
+        "message": "={{ $json.errorBody }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set: Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Config": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request: Search Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request: Search Videos": {
+      "main": [
+        [
+          {
+            "node": "IF: Has Results?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set: Format Search Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Has Results?": {
+      "main": [
+        [
+          {
+            "node": "Split Out: Contents",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set: Format No Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out: Contents": {
+      "main": [
+        [
+          {
+            "node": "IF: Is Video?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Is Video?": {
+      "main": [
+        [
+          {
+            "node": "Set: Extract Basic Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Extract Basic Fields": {
+      "main": [
+        [
+          {
+            "node": "Code: Clean & Calculate Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Clean & Calculate Metrics": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets: Log All Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF: Top Performer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Top Performer?": {
+      "main": [
+        [
+          {
+            "node": "Sort: By Views/Day",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sort: By Views/Day": {
+      "main": [
+        [
+          {
+            "node": "Aggregate: Build Report Array",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate: Build Report Array": {
+      "main": [
+        [
+          {
+            "node": "Code: Build HTML Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Build HTML Report": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Format Search Error": {
+      "main": [
+        [
+          {
+            "node": "Send a message (Error Alert)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set: Format No Results": {
+      "main": [
+        [
+          {
+            "node": "Send a message (Error Alert)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
