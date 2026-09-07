@@ -11,10 +11,7 @@ An end-to-end, no-code automation built in **n8n** that tracks trending YouTube 
 ## 🎥 Demo
 
 <!-- Replace the line below with your actual demo video/GIF once uploaded -->
-[![Watch the demo](demo/thumbnail.png)](demo/demo-video.mp4)
-
-*(See [Adding a Video Demo](#-adding-a-video-demo-to-this-repo) below for exact upload steps.)*
-
+<video src="https://github.com/user-attachments/assets/33662fa8-1fd3-4a22-bead-e44653d4d528" controls width="100%"></video>
 ---
 
 ## 🚀 What This Project Does
